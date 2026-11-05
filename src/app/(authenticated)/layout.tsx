@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { AuthSessionProvider } from "@/components/auth/auth-session-provider";
@@ -11,11 +12,12 @@ export default function AuthenticatedLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
+  const pathname = usePathname();
+  const bare = pathname === "/forbidden";
+
   return (
     <AuthSessionProvider>
-      <AuthGuard>
-        <AdminShell>{children}</AdminShell>
-      </AuthGuard>
+      <AuthGuard>{bare ? children : <AdminShell>{children}</AdminShell>}</AuthGuard>
     </AuthSessionProvider>
   );
 }

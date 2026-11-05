@@ -42,7 +42,7 @@ Label.displayName = "Label";
 export interface TextInputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size"> {
   /** Optional label rendered above the input. */
-  label?: string;
+  label?: React.ReactNode;
   /** Helper text displayed below the input. */
   helperText?: string;
   /** Error message — switches the input into an error state. */

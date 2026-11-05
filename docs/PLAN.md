@@ -12,22 +12,41 @@ Separate Next.js app at `admin/` (port 3001). Shares Express API with the user f
 
 | # | Feature | Route | Backend (today → need) |
 | - | ------- | ----- | ---------------------- |
-| 0 | Admin auth + audit log | all `/api/admin/*` | none → `isAdmin` / allowlist + audit table |
-| 1 | Users & billing | `/users`, `/users/[id]` | `grantPaidAccessAsync` / `revoke` (SQL only) → admin APIs |
-| 2 | Queues | `/queues` | job tables exist → list / cancel / release lease APIs |
-| 3 | Support case (under user) | `/users/[id]` | same + import / classify / tax read APIs |
-| 4 | Persona keywords | `/rules` | seed + user `/keywords` → admin CRUD; move off user Rules |
-| 5 | Models + probe | `/models`, `/health` | `/api/models/*` live (any user) → admin-gate; probe |
-| 6 | Overview | `/overview` | compose health + queue counts + signup metrics |
+| 0 | Admin auth | all `/api/admin/*` | Google SSO + session → `ADMIN_EMAILS` + `requireAdmin` |
+| 1 | Users & billing | `/users`, `/users/[id]` | live · audit + grant/revoke/reset/session |
+| 2 | Queues | `/queues` | live · fail ingestion, cancel classify, release/requeue batches |
+| 3 | Persona keywords | `/rules` | seed + user `/keywords` → admin CRUD; move off user Rules |
+| 4 | Models + probe | `/models` | `/api/models/*` admin-gated |
+| 5 | Overview | `/overview` | health signals + queue/account viz (Health page folded in) |
+| 6 | Settings | `/settings` | subscription knobs via `Setting`; model config on `/models` |
+
+**Out for now:** in-app support case under a user (imports / tax / personal keywords). Handle those tickets by email; queues + billing stay in admin.
+
+Audit log ships with the first mutating admin API (users/billing), not with the gate alone.
 
 ---
 
-## 0 — Access
+## 0 — Auth
 
-- Allowlist or `User.isAdmin`. Gate every `/api/admin/*`.
-- Separate app (this one). No link in the user sidebar.
-- Audit log: who, when, which user, what changed.
-- Read-only by default on bank data.
+Reuse Google SSO + `tb_session`. Authorization on top — no second login system.
+
+**Who is admin (v1):** `ADMIN_EMAILS` env (comma-separated, case-insensitive). Empty list → nobody. Later optional `User.isAdmin` with env as bootstrap override.
+
+**Gate:** `requireAuth` → `requireAdmin` on every `/api/admin/*`. Non-admin → **403** (not 401). Also gate `/api/models/*`, persona-keyword catalog, classifier probe when those move.
+
+**`GET /auth/me`:** include `isAdmin`. Admin UI: no session → `/login`; session + `!isAdmin` → forbidden page + logout; session + admin → shell.
+
+**OAuth across two apps:**
+- `ADMIN_URL` (dev default `http://localhost:3001`)
+- Start Google with `?next=/path&app=admin` (admin) or path-only (user app)
+- Callback redirects to `ADMIN_URL` or `FRONTEND_URL` from OAuth state — paths only, never absolute `next` URLs
+- `CORS_ORIGIN` includes both origins
+- Local same-origin `/api` proxy: each app gets its own host-scoped cookie (fine)
+- Prod: `SESSION_COOKIE_DOMAIN=.parent` if admin + API share a parent domain
+
+**Session:** one active session per user (existing). Admin sign-in revokes the user-app session for that Google account — accept for v1.
+
+**Not doing:** separate admin passwords; client-trusted `isAdmin`; open redirects.
 
 ---
 
@@ -40,7 +59,8 @@ Billing lives on `User` (`isPaid`, `paidUntil`, `freeUsesUsed`), not on tax prof
 - Actions: grant paid (incl. open-ended = `isPaid` + `paidUntil` null), revoke, set end date, reset free uses.
 - Usage: classify jobs, last status, 402-blocked.
 - Until payment webhook ships, this screen **is** billing. Later: webhook event log + signed-payload tester.
-- Show `SUBSCRIPTION_FREE_USES` as read-only (env, not a form).
+- Show free-uses limit from app config (editable on `/settings`).
+- First mutating APIs get the audit log (who, when, target user, what changed).
 
 Replaces manual SQL in `backend/docs/subscription-webhook.md`.
 
@@ -55,19 +75,7 @@ Replaces manual SQL in `backend/docs/subscription-webhook.md`.
 
 ---
 
-## 3 — Support case
-
-One user (+ optional profile). Same data as queues, scoped.
-
-- Imports: file, `customerName`, persona, status, error, staged vs confirmed counts.
-- Classification: job + batches; cancel / release.
-- Tax: deductions for a year; `TaxComputation` list (rule pack, period, `dataCompleteness`) — explain only, never rewrite.
-- Personal keywords: rare audited edits.
-- Leave include/exclude and category overrides to the user.
-
----
-
-## 4 — Rules
+## 3 — Rules
 
 - **PersonaKeyword** — admin CRUD per persona (`freelanceGig`, `smallBusiness`, `payeSideIncome`, `multiStream`): label, kind, weight. Usage check before delete. Move catalog off user `/dashboard/rules`; admin-gate `persona-keywords/all`.
 - **Category catalog** — view-only (code in `categoryCatalog.ts`).
@@ -75,21 +83,30 @@ One user (+ optional profile). Same data as queues, scoped.
 
 ---
 
-## 5 — Models & health
+## 4 — Models & health
 
-Already partially built; not admin-gated.
+Admin-gated (`requireAdmin` on `/api/models/*`).
 
-- Classifier + PDF statement-reader: model id, max tokens, catalog listing, last probe / error.
+- Classifier + PDF statement-reader: catalog listing, last probe / error.
 - Prompt temperatures: `Setting` via `GET/PATCH /api/models/prompts`.
 - Empty `OPENROUTER_API_KEY` → show "LLM skipped", not healthy green.
-- Model id switch: env + redeploy for v1. Live `PUT` only after probe + audit.
-- Health page: `/api/health-check`, `/ready`, classifier probe.
+- Model id / max tokens: **Configure** tab on `/models` (audited via `/api/admin/config`).
+- Catalog picker: `GET /api/models/catalog` (google / openai / anthropic / qwen / nvidia; vision subset for statement reader).
+---
+
+## 5 — Overview
+
+Compose on one page (no separate Health nav): API/DB/OpenRouter/classifier signals, queue depths, paid/free mix, 24h signups / failed uploads. Deeper model detail stays on `/models`.
 
 ---
 
-## 6 — Overview
+## 6 — Settings
 
-Compose: DB ready, model status, classifier probe, queue depths, signups / paid vs free / free exhausted / failed uploads (24h).
+`GET/PATCH /api/admin/config` — env bootstrap + `Setting` overrides + in-memory cache loaded at boot.
+
+`/settings`: free uses + enforcement. `/models?tab=configure`: classifier/PDF model + max tokens (draft + Save, dirty markers).
+
+**Stay in env:** secrets (`OPENROUTER_API_KEY`, OAuth, session), infra (DB, CORS, URLs), `OPENROUTER_APP_TITLE`, concurrency / worker knobs, `ADMIN_EMAILS`.
 
 ---
 
@@ -97,24 +114,24 @@ Compose: DB ready, model status, classifier probe, queue depths, signups / paid 
 
 | Path | Notes |
 | ---- | ----- |
-| `/login` | Google SSO (same cookie API; admin gate TBD) |
-| `/overview` | placeholder |
-| `/users`, `/users/[userId]` | placeholder |
-| `/queues` | placeholder |
-| `/rules` | placeholder |
-| `/models` | placeholder |
-| `/health` | placeholder |
+| `/login` | Google SSO; `app=admin` on OAuth start |
+| `/overview` … `/health` | placeholders |
+| `/forbidden` | signed-in non-admin |
 
-Shell forked from `frontend/`: tokens, `@/components/ui`, axios + TanStack Query, auth session. No tax-profile header (admin is not profile-scoped).
+Shell forked from `frontend/`: tokens, `@/components/ui`, axios + TanStack Query, auth session. No tax-profile header.
 
 ---
 
 ## Ship checklist (backend)
 
-- [ ] `isAdmin` / allowlist + `requireAdmin` on `/api/admin/*`
-- [ ] Audit log for admin writes
-- [ ] Admin user search + subscription grant/revoke/reset APIs
-- [ ] Admin job/batch list + cancel / release lease
-- [ ] Admin PersonaKeyword CRUD; remove user Rules page + Settings link
-- [ ] Gate `/api/models/*` (and probe) to admin
-- [ ] Overview aggregate endpoint (or compose existing)
+- [x] `ADMIN_EMAILS` + `requireAdmin` on `/api/admin/*` (`GET /api/admin/ping`)
+- [x] `ADMIN_URL` + OAuth `app=admin` redirect; CORS includes admin origin
+- [x] `isAdmin` on `GET /auth/me`
+- [x] Audit log for admin writes (`AdminAuditLog` + billing/session actions)
+- [x] Admin user search + subscription grant/revoke/reset + revoke session APIs
+- [x] Admin job/batch list + cancel / release lease / requeue
+- [x] Admin PersonaKeyword CRUD + usage on delete; gate `/persona-keywords/all`; remove user Rules nav (redirect)
+- [~] Support case under user — deferred; handle via email
+- [x] Gate `/api/models/*` to admin; Models page live
+- [x] Overview aggregate (`GET /api/admin/overview`) + health signals + light viz; `/health` redirects here
+- [x] App config (`GET/PATCH /api/admin/config`) + admin Settings page

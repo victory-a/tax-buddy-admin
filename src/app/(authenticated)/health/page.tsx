@@ -1,15 +1,6 @@
-import { PlaceholderPage } from "@/components/shell/placeholder-page";
+import { redirect } from "next/navigation";
 
+/** Health signals live on Overview now. */
 export default function HealthPage() {
-  return (
-    <PlaceholderPage
-      title="Health"
-      summary="Focused probes. Overview shows the same signals at a glance."
-      bullets={[
-        "GET /api/health-check + /ready",
-        "Classifier status + generation probe",
-        "Model catalog status",
-      ]}
-    />
-  );
+  redirect("/overview");
 }

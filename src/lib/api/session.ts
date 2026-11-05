@@ -1,10 +1,7 @@
 import { client } from "@/lib/api/client";
 import type { ServiceEnvelope } from "@/lib/api/types";
 
-/**
- * Mirrors `GET /auth/me` today. Admin-specific fields (`isAdmin`) land when
- * the backend gate ships — until then any signed-in user can open the shell.
- */
+/** Mirrors `GET /auth/me` (admin fields only — profiles ignored here). */
 export type AuthUser = {
   id: string;
   email: string;
@@ -14,6 +11,8 @@ export type AuthUser = {
   freeUsesUsed: number;
   freeUsesLimit: number;
   canUse: boolean;
+  /** True when email is on backend `ADMIN_EMAILS`. */
+  isAdmin: boolean;
 };
 
 export const authMeQueryKey = ["auth", "me"] as const;

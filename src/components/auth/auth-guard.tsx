@@ -13,24 +13,49 @@ function AuthLoading() {
   );
 }
 
+/**
+ * Blocks authenticated routes until `GET /api/auth/me` succeeds.
+ * Non-admins are sent to `/forbidden` (403 UX). Missing session → `/login`.
+ */
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, isPending, isError } = useAuthSession();
+  const onForbidden = pathname === "/forbidden";
 
   React.useEffect(() => {
-    if (isPending || user) return;
+    if (isPending) return;
 
-    const search = typeof window !== "undefined" ? window.location.search : "";
-    const next = encodeURIComponent(`${pathname}${search}`);
-    router.replace(`/login?next=${next}`);
-  }, [isPending, isError, user, pathname, router]);
+    if (!user) {
+      const search = typeof window !== "undefined" ? window.location.search : "";
+      const next = encodeURIComponent(`${pathname}${search}`);
+      router.replace(`/login?next=${next}`);
+      return;
+    }
+
+    if (!user.isAdmin && !onForbidden) {
+      router.replace("/forbidden");
+      return;
+    }
+
+    if (user.isAdmin && onForbidden) {
+      router.replace("/overview");
+    }
+  }, [isPending, isError, user, pathname, onForbidden, router]);
 
   if (isPending) {
     return <AuthLoading />;
   }
 
   if (!user) {
+    return null;
+  }
+
+  if (!user.isAdmin && !onForbidden) {
+    return null;
+  }
+
+  if (user.isAdmin && onForbidden) {
     return null;
   }
 

@@ -1,16 +1,17 @@
-import { PlaceholderPage } from "@/components/shell/placeholder-page";
+import { Suspense } from "react";
+
+import { ModelsView } from "@/components/models/models-view";
 
 export default function ModelsPage() {
   return (
-    <PlaceholderPage
-      title="Models"
-      summary="OpenRouter classifier + PDF statement reader. APIs exist; gate them to admin."
-      bullets={[
-        "Configured model ids, max tokens, catalog listing, last probe",
-        "Prompt temperatures (Setting table via GET/PATCH /api/models/prompts)",
-        "LLM skipped indicator when OPENROUTER_API_KEY is empty",
-        "v1: model id stays env + redeploy; live PUT only after probe + audit",
-      ]}
-    />
+    <Suspense
+      fallback={
+        <main className="flex flex-1 flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8 max-w-5xl">
+          <div className="h-40 max-w-3xl rounded-2xl bg-surface-container-high animate-pulse" />
+        </main>
+      }
+    >
+      <ModelsView />
+    </Suspense>
   );
 }

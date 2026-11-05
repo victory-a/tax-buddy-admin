@@ -20,6 +20,11 @@ export {
 export { FileInput, type FileInputProps } from "./file-input";
 export { Autocomplete, type AutocompleteProps } from "./autocomplete";
 export {
+  SearchableSelect,
+  type SearchableSelectOption,
+  type SearchableSelectProps,
+} from "./searchable-select";
+export {
   Select,
   SelectGroup,
   SelectValue,
@@ -51,3 +56,8 @@ export {
   type ToasterProps,
   type ToasterPosition,
 } from "./toaster";
+export {
+  UnderlineTabs,
+  UnderlineTabPanel,
+  type UnderlineTabItem,
+} from "./underline-tabs";

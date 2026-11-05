@@ -4,7 +4,7 @@ import { Logger } from "@/lib/logger";
 
 export function buildGoogleAuthUrl(nextPath?: string | null): string {
   const destination = nextPath?.trim() || APP_HOME_PATH;
-  const params = new URLSearchParams({ next: destination });
+  const params = new URLSearchParams({ next: destination, app: "admin" });
   const prefix = env.BASE_URL.length > 0 ? env.BASE_URL : "";
   return `${prefix}/api/auth/google?${params.toString()}`;
 }

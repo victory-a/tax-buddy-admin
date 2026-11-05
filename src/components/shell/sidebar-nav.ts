@@ -1,10 +1,10 @@
 import type * as React from "react";
 import {
-  Activity,
   Cpu,
   LayoutDashboard,
   ListTodo,
   Scale,
+  Settings,
   Users,
 } from "lucide-react";
 
@@ -21,7 +21,7 @@ export const SIDEBAR_NAV: readonly NavItem[] = [
   { href: "/queues", label: "Queues", icon: ListTodo },
   { href: "/rules", label: "Rules", icon: Scale },
   { href: "/models", label: "Models", icon: Cpu },
-  { href: "/health", label: "Health", icon: Activity },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function isActivePath(pathname: string, href: string, end?: boolean) {

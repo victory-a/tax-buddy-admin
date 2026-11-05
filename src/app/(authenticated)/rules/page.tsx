@@ -1,16 +1,17 @@
-import { PlaceholderPage } from "@/components/shell/placeholder-page";
+import { Suspense } from "react";
+
+import { RulesView } from "@/components/rules/rules-view";
 
 export default function RulesPage() {
   return (
-    <PlaceholderPage
-      title="Rules"
-      summary="Global classification behavior. Persona keywords move here from the user Rules page."
-      bullets={[
-        "PersonaKeyword CRUD per income profile (include/exclude, weight)",
-        "Show usage before delete",
-        "Category catalog: view-only (code in categoryCatalog.ts)",
-        "Rule packs: view-only until packs become data (id, year, default, bands/reliefs)",
-      ]}
-    />
+    <Suspense
+      fallback={
+        <main className="flex flex-1 flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8 w-full">
+          <div className="h-40 rounded-2xl bg-surface-container-high animate-pulse" />
+        </main>
+      }
+    >
+      <RulesView />
+    </Suspense>
   );
 }

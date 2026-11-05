@@ -12,7 +12,7 @@ export type AutocompleteProps = {
   options: readonly string[];
   disabled?: boolean;
   placeholder?: string;
-  label?: string;
+  label?: React.ReactNode;
   helperText?: string;
   errorText?: string;
   required?: boolean;
