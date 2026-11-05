@@ -84,7 +84,7 @@ export function SettingsSubscriptionPanel() {
     >
       <SettingsSection
         title="Subscription"
-        description="Free-tier limits and whether the gate is active. Env defaults apply until you save here."
+        description="Free-tier limits and whether the gate is active. Saved values live in the database."
       >
         <SettingsToggleField
           label="Enforce free-use limit"

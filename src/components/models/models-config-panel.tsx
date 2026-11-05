@@ -197,7 +197,7 @@ export function ModelsConfigPanel() {
     >
       <SettingsSection
         title="Models"
-        description="OpenRouter model ids and completion budgets."
+        description="OpenRouter model ids and completion budgets (saved in the database)."
         className="space-y-6"
         contentClassName="grid gap-5 sm:grid-cols-2"
       >

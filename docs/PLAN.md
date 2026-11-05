@@ -101,7 +101,7 @@ Compose on one page (no separate Health nav): API/DB/OpenRouter/classifier signa
 
 ## 6 — Settings
 
-`GET/PATCH /api/admin/config` — env bootstrap + `Setting` overrides + in-memory cache loaded at boot.
+`GET/PATCH /api/admin/config` — code defaults + `Setting` overrides + in-memory cache loaded at boot (not `.env`).
 
 `/settings`: free uses + enforcement. `/models?tab=configure`: classifier/PDF model + max tokens (draft + Save, dirty markers).
 
