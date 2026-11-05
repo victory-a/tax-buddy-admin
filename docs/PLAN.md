@@ -88,9 +88,8 @@ Replaces manual SQL in `backend/docs/subscription-webhook.md`.
 Admin-gated (`requireAdmin` on `/api/models/*`).
 
 - Classifier + PDF statement-reader: catalog listing, last probe / error.
-- Prompt temperatures: `Setting` via `GET/PATCH /api/models/prompts`.
 - Empty `OPENROUTER_API_KEY` → show "LLM skipped", not healthy green.
-- Model id / max tokens: **Configure** tab on `/models` (audited via `/api/admin/config`).
+- Model id / max tokens / prompt temperatures: **Configure** tab on `/models` (config + `GET/PATCH /api/models/prompts`).
 - Catalog picker: `GET /api/models/catalog` (google / openai / anthropic / qwen / nvidia; vision subset for statement reader).
 ---
 

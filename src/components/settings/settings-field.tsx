@@ -110,12 +110,14 @@ export function SettingsToggleField({
   description,
   checked,
   onChange,
+  dirty = false,
   disabled,
 }: {
   label: string;
   description: string;
   checked: boolean;
   onChange: (next: boolean) => void;
+  dirty?: boolean;
   disabled?: boolean;
 }) {
   return (
@@ -127,7 +129,9 @@ export function SettingsToggleField({
         onChange={(event) => onChange(event.target.checked)}
       />
       <span className="min-w-0">
-        <span className="block text-body-md font-medium text-on-surface">{label}</span>
+        <span className="block text-body-md font-medium text-on-surface">
+          <DirtyFieldLabel label={label} dirty={dirty} />
+        </span>
         <span className="mt-0.5 block text-body-sm text-on-surface-variant">{description}</span>
       </span>
     </label>

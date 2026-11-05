@@ -1,20 +1,17 @@
 "use client";
 
 import { SettingsSubscriptionPanel } from "@/components/settings/settings-panels";
-import { type AdminConfigPatch, useAdminConfig, useUpdateAdminConfig } from "@/lib/api/admin-config";
-import { showToast } from "@/lib/toast";
+import { UnderlineTabPanel, UnderlineTabs } from "@/components/ui/underline-tabs";
+import { useUrlTab } from "@/lib/use-url-tab";
+
+const SETTINGS_TABS = [{ id: "subscription", label: "Subscription" }] as const;
+
+type SettingsTab = (typeof SETTINGS_TABS)[number]["id"];
+
+const SETTINGS_TAB_IDS = SETTINGS_TABS.map((tab) => tab.id);
 
 export function SettingsView() {
-  const { data, isPending, isError } = useAdminConfig();
-  const update = useUpdateAdminConfig();
-
-  function save(patch: AdminConfigPatch) {
-    update.mutate(patch, {
-      onError: () => {
-        showToast({ value: "Could not save setting", variant: "error" });
-      },
-    });
-  }
+  const { activeTab, setActiveTab } = useUrlTab<SettingsTab>(SETTINGS_TAB_IDS, "subscription");
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
@@ -26,17 +23,17 @@ export function SettingsView() {
         </p>
       </header>
 
-      {isPending ? (
-        <div className="h-48 max-w-2xl animate-pulse rounded-2xl bg-surface-container" aria-hidden />
-      ) : null}
+      <UnderlineTabs
+        items={SETTINGS_TABS}
+        active={activeTab}
+        onChange={setActiveTab}
+        ariaLabel="Settings sections"
+        idPrefix="settings"
+      />
 
-      {isError && !data ? (
-        <p className="text-body-md text-error">Settings unavailable. Refresh to try again.</p>
-      ) : null}
-
-      {data ? (
-        <SettingsSubscriptionPanel config={data} save={save} saving={update.isPending} />
-      ) : null}
+      <UnderlineTabPanel idPrefix="settings" tab="subscription" active={activeTab}>
+        <SettingsSubscriptionPanel />
+      </UnderlineTabPanel>
     </main>
   );
 }

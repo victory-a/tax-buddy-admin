@@ -1,4 +1,3 @@
-import { ModelPromptTemperatures } from "@/components/models/prompt-temperatures";
 import {
   formatLatency,
   formatModalities,
@@ -57,7 +56,6 @@ export function ModelCard({ model }: { model: AiModelStatus }) {
         />
         <Detail label="Inputs" value={formatModalities(model.inputModalities)} />
       </dl>
-      {model.id === "classifier" ? <ModelPromptTemperatures ids={["taxability", "category"]} /> : null}
     </article>
   );
 }
